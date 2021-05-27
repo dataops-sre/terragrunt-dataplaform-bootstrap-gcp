@@ -1,0 +1,37 @@
+# https://taskfile.dev
+
+version: '2'
+
+env:
+  TERRAGRUNT_VERSION: '0.15.4'
+
+tasks:
+
+  run-image:
+    cmds:
+      - >
+        docker run -it -v `pwd`:/mnt -w="/mnt" 
+        -v ~/.gcloud/:/root/.gcloud/ 
+        -e GOOGLE_APPLICATION_CREDENTIALS="/root/.gcloud/key.json" 
+        --user=root --rm alpine/terragrunt:$TERRAGRUNT_VERSION bash
+
+  format-all:
+    cmds:
+      - terragrunt hclfmt
+      - terraform fmt -recursive
+
+  clean-all:
+    cmds:
+      - find . -type d -name ".terragrunt-cache" -prune -exec rm -rf {} \;
+      - find . -type d -name ".terraform" -prune -prune -exec rm -rf {} \;
+      - find . -type f -name "terraform.tfstate*" -prune -exec rm -rf {} \;
+
+  plan-sequential:
+    deps: [clean-all]
+    cmds:
+      - find {{.MY_TERRAGRUNT_WORKING_DIR}} -type f \( -iname "terragrunt.hcl" ! -iwholename "{{.MY_TERRAGRUNT_WORKING_DIR}}/terragrunt.hcl" \) -prune -exec sh -c 'echo "#####"; echo $(dirname "{}"); echo "#####"; terragrunt plan --terragrunt-non-interactive --terragrunt-working-dir $(dirname "{}")' \;
+
+  apply-sequential:
+    deps: [clean-all]
+    cmds:
+      - find {{.MY_TERRAGRUNT_WORKING_DIR}} -type f \( -iname "terragrunt.hcl" ! -iwholename "{{.MY_TERRAGRUNT_WORKING_DIR}}/terragrunt.hcl" \) -prune -exec sh -c 'echo "#####"; echo $(dirname "{}"); echo "#####"; terragrunt apply -auto-approve --terragrunt-non-interactive --terragrunt-working-dir $(dirname "{}")' \;

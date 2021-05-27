@@ -1,0 +1,12 @@
+replicaCount: 1
+airflow:
+  config:
+    AIRFLOW__KUBERNETES__NAMESPACE: default
+    ENV: dev
+
+logsPersistence:
+  accessMode: ReadWriteOnce
+  size: 4Gi
+
+serviceAccount:
+  create: true

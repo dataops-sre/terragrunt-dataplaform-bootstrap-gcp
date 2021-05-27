@@ -1,0 +1,9 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/
+*.iml
+*/**/.terraform/
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*/**/.terragrunt-cache/
+/.python-version
