@@ -1,5 +1,7 @@
 inputs = {
   project_id              = "gke-terragrunt-demo"
+  cluster_name            = "gke-terragrunt-test"
+  region                  = "europe-west1" 
 }
 
 include {

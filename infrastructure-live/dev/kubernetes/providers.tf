@@ -1,37 +1,45 @@
-variable "eks_cluster_id" {
+variable "cluster_name" {
   type        = string
-  default     = "dummy"
+  default     = "gke-on-vpc-cluster"
   description = "describe your variable"
 }
 
-data "aws_eks_cluster" "cluster" {
-  name = var.eks_cluster_id
+variable "project_id" {
+  type        = string
+  default     = "demo"
+  description = "describe your variable"
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.eks_cluster_id
+variable "region" {
+  description = "The region to host the cluster in"
+  default     = "europe-west1"
 }
 
-provider "aws" {
-  version = ">= 3.3.0"
-  region  = "eu-west-2"
+# Retrieve an access token as the Terraform runner
+data "google_client_config" "provider" {}
+
+data "google_container_cluster" "gke_cluster" {
+  name = var.cluster_name
+  project = var.project_id
+  location = var.region
 }
 
 provider "kubernetes" {
-  version                = "1.13.3"
-  load_config_file       = "false"
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  token                  = data.aws_eks_cluster_auth.cluster.token
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  host  = "https://${data.google_container_cluster.gke_cluster.endpoint}"
+  token = data.google_client_config.provider.access_token
+  cluster_ca_certificate = base64decode(
+    data.google_container_cluster.gke_cluster.master_auth[0].cluster_ca_certificate,
+  )
 }
-
 
 provider "helm" {
   version = "1.3.2"
   kubernetes {
     load_config_file       = "false"
-    host                   = data.aws_eks_cluster.cluster.endpoint
-    token                  = data.aws_eks_cluster_auth.cluster.token
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+    host                   = "https://${data.google_container_cluster.gke_cluster.endpoint}"
+    token                  = data.google_client_config.provider.access_token
+    cluster_ca_certificate = base64decode(
+      data.google_container_cluster.gke_cluster.master_auth[0].cluster_ca_certificate,
+    )
   }
 }

@@ -63,4 +63,68 @@ module "gke" {
   ip_range_pods          = var.ip_range_pods_name
   ip_range_services      = var.ip_range_services_name
   create_service_account = true
+  cluster_autoscaling    = var.cluster_autoscaling
+
+  node_pools = [
+    {
+      name            = "pool-01"
+      node_count      = 1 
+      node_locations  = "${var.region}-d"
+      min_count       = 1
+      max_count       = 2
+      auto_upgrade    = true
+    },
+    {
+      name            = "pool-02"
+      node_locations  = "${var.region}-b,${var.region}-c"
+      autoscaling     = false
+      node_count      = 1 
+      disk_type       = "pd-standard"
+      image_type      = "COS"
+      auto_upgrade    = true
+      preemptible     = true
+    },
+  ]
+
+  node_pools_metadata = {
+    pool-01 = {
+      shutdown-script = file("${path.module}/data/shutdown-script.sh")
+    }
+  }
+
+  node_pools_labels = {
+    all = {
+      all-pools-example = true
+    }
+    pool-01 = {
+      pool-01-example = true
+    }
+  }
+
+  node_pools_taints = {
+    all = [
+      {
+        key    = "all-pools-example"
+        value  = true
+        effect = "PREFER_NO_SCHEDULE"
+      },
+    ]
+    pool-01 = [
+      {
+        key    = "pool-01-example"
+        value  = true
+        effect = "PREFER_NO_SCHEDULE"
+      },
+    ]
+  }
+
+  node_pools_tags = {
+    all = [
+      "all-node-example",
+    ]
+    pool-01 = [
+      "pool-01-example",
+    ]
+  }
+
 }
